@@ -22,7 +22,7 @@
 
 <!-- Begin page content -->
 <div class="container">
-    <h2>Types and Programming Languages, 15p</h2>
+    <h2>Types and Programming Languages, 15hp</h2>
 
     <div class="well hidden-print">
         <ul>
@@ -50,7 +50,13 @@
                 <h4 class="list-group-item-heading">#1; Untyped Lambda Calculus</h4>
 
                 <p>
-                    Untyped lambda calculus.
+The untyped lambda calculus was created by Alonzo Church in the 1930s. It is a small formal system which at the time of its creation had no direct relationship to computers. The system has three syntactic rules: function abstraction, function application, and variables. Despite it's mere size, the untyped lambda calculus is Turing complete, as proven by Alan Turing. As a model of computation, the system is unique in its simplicity and flexibility, allowing for different kinds of extensions. It's perhaps not surprising then that John McCarthy used the untyped lambda calculus as a foundation for the first functional programming language, Lisp, in 1958. Since then, lambda calculus has been prominent in the world of programming languages. It can be found in different forms at the core of every functional programming language and its ideas are featured in many other programming languages as well.
+</p>
+<p>
+We choose to implement the untyped lambda calculus with an ML-inspired syntax, where abstractions are denoted with the fun keyword and a right-pointing arrow following the parameter, like so: <code>fun x -> x</code>. The motivation behind this decision is simple: throughout the course we will develop a functional programming language that is essentially a subset of ML. In line with the course material, evaluation is based on substitution, instead of a lookup-based approach, reflecting the goal of the course: developing an interpreter for the learning experience, not for the sake of creating an industry-grade product.
+</p>
+<p>
+The lambda calculus can be implemented with different evaluation strategies: call-by-value, call-by-name and call-by-need. Since ML employs a strict call-by-value evaluation strategy, we choose to reflect this in our implementation. This means that the arguments in function applications are evaluated to value-form before they are substituted into the body. Finally, instead of representing variables explicitly by name, the evaluator makes use of de Brujin indexing, where variables are identified based on the depth that they occur in the abstract syntax tree.
                 </p>
 
                 <dl class="dl-horizontal">
@@ -70,7 +76,7 @@
                 <h4 class="list-group-item-heading">#2; Simply Typed Lambda Calculus</h4>
 
                 <p>
-                    Typed lambda calculus.
+The simply typed lambda calculus is a constrained version of lambda calculus. In fact, the typing rules are so constraining that the simply typed calculus is not turing complete. In the untyped lambda calculus, recursion can be encoded with the help of the y-combinator. While in the simply typed lambda calculus, the y-combinator is not well typed. This is unfortunate for our purposes since we are interested in developing a useful programming language, and to do that we need recursion. Luckily there is a way to remedy this by introducing something called the fixed-point combinator, which we will see next week. Despite the loss of the ability to encode recursion, the simply typed lambda calculus is still useful for theoretical purposes. The typing rules makes the system strongly normalizing, which means that any well typed expressions can be rewritten to an irreducible term. Another way to interpret this: well typed programs always terminate.
                 </p>
 
                 <dl class="dl-horizontal">
@@ -90,7 +96,11 @@
                 <h4 class="list-group-item-heading">#3; Simple Extensions </h4>
 
                 <p>
-                    Practical extensions: let, tuples and records.
+As previously mentioned, we can introduce the capability for recursion using the fixed-point combinator. In our language, this feature is accessed through the ML-style letrec-construct <code>let rec f x = f x</code>. These recursive let bindings are desugared to let bindings that make use of the fixed-point operator. A recursive function <code>let rec f x = f x</code> is desugared into <code>let f = fix (fun f -> fun x -> f x)</code>. When we evaluate the fix operator, we substitute f in the body for the whole expression and return the body, like so: <code>fun f -> fun x -> (fix (fun f -> fun x -> f x)) x</code>.
+</p>
+<p>
+In the book, Pierce notes that a let-binding like <code>let x = 1335 in x + 2</code> can be desugared into <code>(fun x -> x + 2) 1337</code>. However, our interpreter does not perform this transformation because explicitly representing the let-construct in the abstract syntax tree enables let-polymorphism, which is essential for Damas-Hindley-Milner style type inference.
+
                 </p>
 
                 <dl class="dl-horizontal">
@@ -110,7 +120,7 @@
                 <h4 class="list-group-item-heading">#4; References</h4>
 
                 <p>
-                    References.
+References in ML are pointers to locations in a store. For our implementation, we chose to represent the store as array of terms. Just like in ML, our language comes with syntax for creating, dereferencing, and assigning to references. Assignment and dereferencing looks the same way as in any other ML, but the syntax for creating references actually takes inspiration from C++ and Rust. While in ML, a reference to the number 1337 is created like so: <code>let x = ref 1337</code>, in our language it looks like this <code> let x = &1337</code>. With the addition of references, our language is no longer pure; we have introduced the capability of working with side effects.
                 </p>
 
                 <dl class="dl-horizontal">
@@ -126,7 +136,13 @@
                 <h4 class="list-group-item-heading">#5; Subtyping </h4>
 
                 <p>
-                    Subtyping and metatheory.
+Subtyping is a concept found in most modern programming languages, in the form of interfaces and inheritance between classes in C#, type classes in Haskell, and structural subtyping in OCaml. Although the concept manifests itself in different ways, the fundamental idea remains the same: if type A is a subtype of type B, we can treat an instance of type A like an instance of type B. This means that we safely call functions that were written for a type B with instances of type A. Except for saving us programmers from doing rewriting code, subtyping can aid in the design of systems, enabling modular architectures that otherwise would have been too complicated to implement.
+</p>
+<p>
+In the book, Pierce deals predominantly with structural subtyping, as found in OCaml. Structural subtyping comes in two kinds: width subtyping and depth subtyping. In a system with width subtyping for records, the record type <code>T = {x: Int, y: Bool></code> is considered to be a subtype of the record type <code> S = {x: Int}</code> because its members are a superset of those in <code>S</code>. With this established, we can use instances of the type <code>S</code> as arguments to functions that demand an instance of type <code>T</code>. Intuitively, this works since functions of <code>S</code> only require that the passed arguments contains a member named <code>x</code> with the type <code>Int</code>. Depth subtyping is an extension of this concept, where each individual member can be a subtype of the corresponding member in the supertype.
+</p>
+<p>
+Subtyping interacts in interesting ways with already present language features. Since our language contains higher order functions, we must take into account that functions which are passed in and returned from other functions may be parameterized by records and thus we must have a subtyping rules for functions as well. Just like with records, use functions of different types as arguments and returns, as long as they are a subtype of the expected type. It turns out that for a function <code>f</code> to be a subtype of function <code>g</code>, the parameters of <code>f</code> have to be supertypes of those of <code>g</code>, and the return type of <code>f</code> has to be a subtype of <code>g</code>. We say that functions are contravariant in its parameter types and covariant in its return type
                 </p>
 
                 <dl class="dl-horizontal">
@@ -144,7 +160,14 @@
                 <span class="date">Jul 30</span>
 
                 <h4 class="list-group-item-heading">#6 - 7; Recursive Types</h4>
-                <p> Recursive types and metatheory. </p>
+                <p>
+Pierce presents two ways to model recursive types: equi-recursive types, and iso-recursive types. In the equi-recursive model, we consider each recursive type to be a structure with infinite expansions of itself, essentially an infinite tree. This way, two type expressions can be considered equivalent when they have the same infinite expansion. Pierce notes that equi-recursive types are not practical for implementation purposes, but instead they are useful for theoretical work. The main reason for this is that the augmentation of equi-recursive types to an existing system does not affect the correctness of previously derived theorems. This saves us from having to reformulate the proofs we constructed in the initial system.
+</p>
+<p>
+In the iso-recursive model, the recursion is contained with the help of two type constructs called fold and unfold. Wrapping a type with the fold construct allows us to represent a contraction of the recursion in a type, while unfold is the expansion of the recursion in a type. Fold and unfold are each others inverses and thus they cancel each other out. To enable the iso-recursive model, we have to insert folds and unfolds whenever a user of the programming language wants to work with recursive types.
+</p><p>
+Fortunately, with an ML style programming language we can easily hide this detail from the user because the points at which we need to insert fold and unfold naturally correspond with the syntactic constructs for working with algebraic data types. Whenever we see a constructor for an algebraic data type being used we insert a fold, and whenever we see a pattern match expression we insert an unfold. In our implementation we did not need to represent fold and unfold explicitly since the only well-typed way of working with an algebraic data type is to first construct it and then pattern match on it, a sequence which cancel each out in terms of fold and unfold. We avoid non-termination in the typechecker by representing self-references within a type as just a string equal to the name of the type instead of the whole structure. We believe this to be conceptually equivalent to explicitly representing fold and unfold; our approach is just a the different way to encode the same idea.
+                </p>
 
                 <dl class="dl-horizontal">
                     <dt>Theory</dt>
@@ -162,7 +185,12 @@
 
                 <h4 class="list-group-item-heading">#8 - 9; Type Reconstruction </h4>
 
-                <p> Type reconstruction. </p>
+               <p>
+ We implemented a variant of the original Algorithm W which is a bit different to Pierce's. The algorithm revolves around generating type constraints and solving them in order to accumulate a set of substitutions that when applied to an initial type of an expressions give us the most general type for that expression. While the algorithm is fine for a small language, we found that it quickly became unwieldy for our language - the code became hard to follow and hard to reason about.  The problem stemmed from the algorithms intertwining of the generation of constraints and the solving of constraints. So, we decided to separate the algorithm into two passes; the first one generates constraints and the second one solves them.
+</p>
+               <p>
+While implementing the algorithm, we found that implicit structural subtyping for records does not work well with Damas-Hindley-Milner style type inference. Subtyping demands constraints that are directed, saying that a type is a subtype of a specific type. The unification in Algorithm W only works with undirected constraints, such as equality. Because of this, we decided to remove all support for implicit structural subtyping in the language. However, we do see the need for subtyping and we are considering it as a future addition to our language. More specifically, we are interested in subtyping in the style of type classes, as can be found in Haskell and Idris.
+                </p>
 
                 <dl class="dl-horizontal">
                     <dt>Theory</dt>
@@ -181,7 +209,7 @@
                 <h4 class="list-group-item-heading">#10; Interactive REPL</h4>
 
                 <p>
-                    Finalize the project by building a REPL (Read Eval Print Loop) for working with the language.
+ Finally, we have implemented an interactive REPL for working with our language. An image called jmldemo1.png is included with the source code in the attached .zip-file. The image shows a session of working with the REPL from the command line, showing the syntax for most of the constructs in the language as well as the quit commad. Except for <code>:quit</code>, there's also a command for clearing the screen <code>:clear</code>, and a command to change the verbosity of output, with three levels: <code>:show nothing</code>, <code>:show something</code> (the default), and <code>:show everything</code>. Remember to end a line with <code>;;</code> when you want your expression to be evaluated. To run the REPL you must have the latest version of dotnet core installed, you can find it <a href="https://www.microsoft.com/net/learn/get-started-with-dotnet-tutorial">here</a>. When you have dotnet core installed and in your path variable, cd into the project folder and run the command <code>dotnet run</code>.
                 </p>
 
                 <dl class="dl-horizontal">
